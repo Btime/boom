@@ -1,18 +1,12 @@
 'use strict';
 
-// Load modules
+const Boom = require('..');
+const Code = require('@hapi/code');
+const Lab = require('@hapi/lab');
 
-const Code = require('code');
-const Boom = require('../lib');
-const Lab = require('lab');
-
-
-// Declare internals
 
 const internals = {};
 
-
-// Test shortcuts
 
 const { describe, it } = exports.lab = Lab.script();
 const expect = Code.expect;
@@ -357,9 +351,9 @@ describe('Boom', () => {
 
         it('returns a WWW-Authenticate header when passed attributes, missing error', () => {
 
-            const err = Boom.unauthorized(null, 'Test', { a: 1, b: 'something', c: null, d: 0 });
+            const err = Boom.unauthorized(null, 'Test', { a: 1, b: 'something', c: null, d: 0, e: undefined });
             expect(err.output.statusCode).to.equal(401);
-            expect(err.output.headers['WWW-Authenticate']).to.equal('Test a="1", b="something", c="", d="0"');
+            expect(err.output.headers['WWW-Authenticate']).to.equal('Test a="1", b="something", c="", d="0", e=""');
             expect(err.isMissing).to.equal(true);
         });
 
@@ -975,6 +969,37 @@ describe('Boom', () => {
                         expect(error.typeof).to.not.equal(Boom[type]);
                     }
                 });
+            });
+        });
+    });
+
+    describe('reformat()', () => {
+
+        it('displays internal server error messages in debug mode', () => {
+
+            const error = new Error('ka-boom');
+            const err = Boom.boomify(error, { statusCode: 500 });
+
+            err.reformat(false);
+            expect(err.output).to.equal({
+                statusCode: 500,
+                payload: {
+                    statusCode: 500,
+                    error: 'Internal Server Error',
+                    message: 'An internal server error occurred'
+                },
+                headers: {}
+            });
+
+            err.reformat(true);
+            expect(err.output).to.equal({
+                statusCode: 500,
+                payload: {
+                    statusCode: 500,
+                    error: 'Internal Server Error',
+                    message: 'ka-boom'
+                },
+                headers: {}
             });
         });
     });
